@@ -5,8 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-
+	"github.com/Rajiv-test/chirpy/internal/auth"
 	"github.com/google/uuid"
+
 )
 
 func (cfg *apiConfig) handlerWebhook(w http.ResponseWriter, r *http.Request){
@@ -16,9 +17,14 @@ func (cfg *apiConfig) handlerWebhook(w http.ResponseWriter, r *http.Request){
 			UserId uuid.UUID `json:"user_id"`
 		} `json:"data"`
 	}
+	apikey,err := auth.GetAPIKey(r.Header)
+	if err != nil || cfg.polkaKey != apikey {
+		respondWithError(w,http.StatusUnauthorized,"couldn't get apikey",err)
+		return
+	}
 	decoder := json.NewDecoder(r.Body)
 	params := request{}
-	err := decoder.Decode(&params)
+	err = decoder.Decode(&params)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't decode parameters", err)
 		return
